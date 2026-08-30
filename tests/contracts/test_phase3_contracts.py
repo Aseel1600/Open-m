@@ -698,6 +698,7 @@ class TestCapabilityMetadata:
             "fish_audio",
             "fal.ai",
             "google_tts",
+            "iflytek",
             "kling_official",
             "openai",
             "piper",
