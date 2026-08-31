@@ -119,6 +119,41 @@ demo: ensure-venv
 demo-list: ensure-venv
 	$(RUN_PYTHON) render_demo.py --list
 
+# ---- YouTube uploader ----
+
+youtube-test-bundle: ensure-venv
+	@echo "==> Generating minimal test export bundle..."
+	$(RUN_PYTHON) tools/publish/create_test_bundle.py --output exports/test-project
+	@echo ""
+	@echo "Next: run 'make youtube-demo' or upload manually:"
+	@echo "  python tools/publish/youtube_uploader.py --export-path exports/test-project --client-secrets /path/to/client_secrets.json --privacy private"
+
+youtube-upload: ensure-venv
+	@if [ -z "$(EXPORT_PATH)" ]; then echo "ERROR: EXPORT_PATH not set. Usage: make youtube-upload EXPORT_PATH=exports/<project> CLIENT_SECRETS=/path/to/client_secrets.json"; exit 1; fi
+	@if [ -z "$(CLIENT_SECRETS)" ]; then echo "ERROR: CLIENT_SECRETS not set. Usage: make youtube-upload EXPORT_PATH=exports/<project> CLIENT_SECRETS=/path/to/client_secrets.json"; exit 1; fi
+	@echo "==> Uploading from $(EXPORT_PATH) to YouTube..."
+	$(RUN_PYTHON) tools/publish/youtube_uploader.py --export-path "$(EXPORT_PATH)" --client-secrets "$(CLIENT_SECRETS)" --privacy $(PRIVACY)
+
+youtube-demo: ensure-venv youtube-test-bundle
+	@echo ""
+	@echo "=== YouTube Uploader End-to-End Demo ==="
+	@echo ""
+	@echo "Test export bundle created at: exports/test-project"
+	@echo ""
+	@echo "To upload the test video to YouTube, run:"
+	@echo ""
+	@echo "  make youtube-upload EXPORT_PATH=exports/test-project CLIENT_SECRETS=/path/to/client_secrets.json PRIVACY=private"
+	@echo ""
+	@echo "Alternative: upload manually:"
+	@echo ""
+	@echo "  python tools/publish/youtube_uploader.py --export-path exports/test-project \\"
+	@echo "    --client-secrets /path/to/client_secrets.json --privacy private"
+	@echo ""
+	@echo "Or batch-upload all export bundles:"
+	@echo ""
+	@echo "  ./tools/publish/upload_all.sh /path/to/client_secrets.json"
+	@echo ""
+
 lint: ensure-venv
 	$(RUN_PYTHON) -m py_compile tools/base_tool.py
 	$(RUN_PYTHON) -m py_compile tools/tool_registry.py

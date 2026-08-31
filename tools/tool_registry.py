@@ -127,7 +127,13 @@ class ToolRegistry:
         for module_info in pkgutil.walk_packages(package_paths, f"{package.__name__}."):
             if module_info.name.endswith(".base_tool") or module_info.name.endswith(".tool_registry"):
                 continue
-            module = importlib.import_module(module_info.name)
+            try:
+                module = importlib.import_module(module_info.name)
+            except Exception:
+                # Some optional tool stacks require additional packages or platform
+                # setup. Skip those modules so registry discovery remains robust for
+                # the rest of the tool catalog.
+                continue
             discovered.extend(self.register_module(module))
 
         self._discovered_packages.add(package_name)

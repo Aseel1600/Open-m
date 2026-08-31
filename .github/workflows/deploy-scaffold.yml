@@ -1,0 +1,56 @@
+name: Deploy scaffold (provider-agnostic)
+
+on:
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+  packages: write
+  id-token: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    outputs:
+      image_ref: ${{ steps.set-image-ref.outputs.image_ref }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+      - name: Build image (no push)
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          push: false
+          tags: ghcr.io/${{ github.repository_owner }}/openmontage:${{ github.sha }}
+      - name: Save image ref
+        id: set-image-ref
+        run: echo "::set-output name=image_ref::ghcr.io/${{ github.repository_owner }}/openmontage:${{ github.sha }}"
+
+  deploy-scaffold:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Inspect deploy conditions
+        run: |
+          echo "IMAGE_REF=${{ needs.build.outputs.image_ref }}"
+          echo "This job is a scaffold. Each provider-specific step runs only when the required secrets are present. No cloud credentials are stored in this workflow."
+
+      - name: GCP Cloud Run (placeholder)
+        if: ${{ secrets.GCP_SERVICE_ACCOUNT_KEY != '' && secrets.CLOUD_RUN_SERVICE != '' }}
+        run: |
+          echo "Cloud Run deploy would run here. Configure GCP_SERVICE_ACCOUNT_KEY (JSON), GCP_PROJECT, CLOUD_RUN_SERVICE, and REGION in repo secrets."
+
+      - name: AWS ECS / ECR (placeholder)
+        if: ${{ secrets.AWS_ACCESS_KEY_ID != '' && secrets.AWS_SECRET_ACCESS_KEY != '' && secrets.ECR_REPOSITORY != '' }}
+        run: |
+          echo "ECS/ECR deploy would run here. Configure AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_REGION, ECR_REPOSITORY, ECS_CLUSTER, and ECS_SERVICE in repo secrets."
+
+      - name: Kubernetes (kubeconfig) (placeholder)
+        if: ${{ secrets.KUBE_CONFIG != '' }}
+        run: |
+          echo "Kubernetes deploy would run here. Provide base64-encoded KUBE_CONFIG in secrets. Decode and use kubectl to apply manifests."
+
+      - name: No provider configured
+        if: ${{ secrets.GCP_SERVICE_ACCOUNT_KEY == '' && secrets.AWS_ACCESS_KEY_ID == '' && secrets.KUBE_CONFIG == '' }}
+        run: echo "No deploy secrets found — this is a scaffold. Add provider secrets to enable a real deployment."

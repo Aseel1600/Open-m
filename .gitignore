@@ -43,6 +43,8 @@ music_library/
 .env.local
 *.env
 .youtube-token.json
+youtube_token.json
+*.youtube-token.json
 # Google service-account / Vertex AI keys — never commit
 gcp-*.json
 *-service-account.json

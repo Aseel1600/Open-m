@@ -1,0 +1,123 @@
+name: YouTube Uploader
+
+on:
+  workflow_dispatch:
+    inputs:
+      export_path:
+        description: 'Export bundle path (e.g., exports/test-project)'
+        required: true
+        default: 'exports/test-project'
+      privacy:
+        description: 'Privacy setting'
+        required: true
+        type: choice
+        options:
+          - private
+          - unlisted
+          - public
+        default: 'private'
+      generate_test:
+        description: 'Generate test bundle before upload'
+        required: false
+        type: boolean
+        default: true
+
+jobs:
+  youtube-upload:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Install ffmpeg
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg
+
+      - name: Generate test export bundle
+        if: ${{ github.event.inputs.generate_test == 'true' }}
+        run: |
+          python tools/publish/create_test_bundle.py --output "${{ github.event.inputs.export_path }}"
+
+      - name: Verify export bundle
+        run: |
+          EXPORT_PATH="${{ github.event.inputs.export_path }}"
+          if [ ! -f "$EXPORT_PATH/video"/*.mp4 ]; then
+            echo "ERROR: No video file found in $EXPORT_PATH/video/"
+            exit 1
+          fi
+          if [ ! -f "$EXPORT_PATH/metadata/metadata.json" ]; then
+            echo "ERROR: metadata.json not found"
+            exit 1
+          fi
+          echo "✓ Export bundle verified"
+          ls -lah "$EXPORT_PATH"
+
+      - name: Create client_secrets.json from secret
+        env:
+          CLIENT_SECRETS_JSON: ${{ secrets.YOUTUBE_CLIENT_SECRETS }}
+        run: |
+          if [ -z "$CLIENT_SECRETS_JSON" ]; then
+            echo "ERROR: YOUTUBE_CLIENT_SECRETS secret not configured"
+            echo "Set up GitHub secret 'YOUTUBE_CLIENT_SECRETS' with your OAuth client_secrets.json content"
+            exit 1
+          fi
+          echo "$CLIENT_SECRETS_JSON" > client_secrets.json
+          echo "✓ client_secrets.json created from GitHub secret"
+
+      - name: Pre-create credentials if refresh token available
+        env:
+          YOUTUBE_REFRESH_TOKEN: ${{ secrets.YOUTUBE_REFRESH_TOKEN }}
+        run: |
+          if [ -n "$YOUTUBE_REFRESH_TOKEN" ]; then
+            python3 << 'EOF'
+            import json
+            import os
+            
+            refresh_token = os.getenv("YOUTUBE_REFRESH_TOKEN")
+            if refresh_token:
+              creds = {
+                "type": "authorized_user",
+                "client_id": "cached",
+                "client_secret": "cached",
+                "refresh_token": refresh_token
+              }
+              with open(".youtube-token.json", "w") as f:
+                json.dump(creds, f)
+              print("✓ Pre-created .youtube-token.json from refresh token")
+            EOF
+          fi
+
+      - name: Upload to YouTube
+        run: |
+          python tools/publish/youtube_uploader.py \
+            --export-path "${{ github.event.inputs.export_path }}" \
+            --client-secrets client_secrets.json \
+            --privacy "${{ github.event.inputs.privacy }}"
+
+      - name: Upload job summary
+        if: success()
+        run: |
+          echo "## YouTube Upload Complete ✓" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- Export path: ${{ github.event.inputs.export_path }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Privacy: ${{ github.event.inputs.privacy }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Run: [View on GitHub](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})" >> $GITHUB_STEP_SUMMARY
+
+      - name: Clean up secrets
+        if: always()
+        run: |
+          rm -f client_secrets.json .youtube-token.json
