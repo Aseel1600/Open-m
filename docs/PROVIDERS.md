@@ -357,6 +357,59 @@ select it through `tts_selector` with `preferred_provider: "fal.ai"`.
 
 ---
 
+### Musein CLI — Native Multi-Model Video Provider
+
+> **One authenticated CLI, multiple live video models.** `musein_video` is a
+> registry-native `video_generation` provider. Musein CLI owns credentials,
+> endpoint/account state, local uploads, task recovery, and downloads;
+> OpenMontage owns provider selection, point approval, asset placement, and MP4
+> validation.
+
+**Tool unlocked:** `musein_video`
+
+**Authentication:** `musein login --method key` (the key is read without echo
+and is not copied into OpenMontage `.env`)
+
+**Optional config:** `MUSEIN_CLI_PATH`, `MUSEIN_ENDPOINT`,
+`MUSEIN_USD_PER_POINT`
+
+Install Musein CLI, sign in once, and verify the account with
+`musein whoami --json`. Enumerate the current catalog with
+`musein models --type video --json`; the exact model's dry run is still the
+required entitlement and price check.
+
+Every paid generation follows a two-step gate:
+
+1. `musein_video.dry_run()` returns the resolved model and live
+   `points_estimated` without submitting or charging.
+2. `musein_video.execute()` re-quotes the identical request and requires
+   `approved_points`. If the quote increased, it stops before submission.
+
+Completed results report both the estimate and authoritative
+`usage.points_consumed`, the final `model_id`, server `overrides`, task id, and
+validated local MP4. USD remains unknown unless the operator supplies an
+explicit point conversion rate; provider points are never scored as free.
+
+Exit 6 is recoverable through `task_action: "collect"` for the same task. Exit
+9 requires read-only `task_action: "resolve"` and forbids automatic resubmission.
+The provider has no retry loop and makes no calls while idle.
+
+To make an OpenMontage run Musein-only, select through `video_selector` with:
+
+```json
+{
+  "preferred_provider": "musein",
+  "allowed_providers": ["musein"]
+}
+```
+
+`preferred_provider` expresses preference; `allowed_providers` is the hard
+boundary that prevents fallback to a different gateway.
+
+See `.agents/skills/musein-cli/SKILL.md` for the full cost and recovery contract.
+
+---
+
 ### MiniMax — Official Direct Image and Video API
 
 > **First-party image and video generation.** The direct MiniMax API supports
@@ -1421,6 +1474,7 @@ These tools require only FFmpeg or Python packages — no GPU, no API key.
 | **fish.audio** | `FISH_AUDIO_API_KEY` | `fish_audio_tts` | Free tier (s2.1-pro-free) + paid |
 | **fal.ai** | `FAL_KEY` | `flux_image`, `recraft_image`, `kling_video`, `veo_video`, `seedance_video`, `gemini_omni_fal`, `minimax_fal_video` | Pay-as-you-go |
 | **Atlas Cloud** | `ATLASCLOUD_API_KEY` | `atlas_image`, `atlas_video` | Pay-as-you-go |
+| **Musein CLI** | CLI credential store (or CLI-owned `MUSEIN_KEY` / `MUSEIN_TOKEN`) | `musein_video` | Live quote in Musein points |
 | **Kling Official** | `KLING_API_KEY` | `kling_official_video`, `kling_official_image`, `kling_tts`, `kling_avatar`, `kling_lip_sync` | Pay-as-you-go |
 | **Volcengine Ark** | `ARK_API_KEY` | `seedance_ark` | Pay-as-you-go |
 | **MiniMax direct** | `MINIMAX_API_KEY` | `minimax_image`, `minimax_video` | Pay-as-you-go |
@@ -1445,7 +1499,7 @@ How many providers cover each capability:
 | Capability | Cloud Providers | Local Providers | Free Options |
 |-----------|----------------|-----------------|--------------|
 | **Image Generation** | FLUX, Kling Official, Grok, Google Imagen, GPT Image 2, Recraft | Local Diffusion | Pexels, Pixabay (stock) |
-| **Video Generation** | Grok, Kling Official, fal.ai, Seedance via Volcengine Ark, Runway, Veo, Gemini Omni, Higgsfield, MiniMax, HeyGen, Tencent Hunyuan, ComfyUI Partner Nodes | WAN, Hunyuan, CogVideo, LTX, ComfyUI WAN, ComfyUI MiniMax H3 | Pexels, Pixabay (stock) |
+| **Video Generation** | Musein CLI, Grok, Kling Official, fal.ai, Seedance via Volcengine Ark, Runway, Veo, Gemini Omni, Higgsfield, MiniMax, HeyGen, Tencent Hunyuan, ComfyUI Partner Nodes | WAN, Hunyuan, CogVideo, LTX, ComfyUI WAN, ComfyUI MiniMax H3 | Pexels, Pixabay (stock) |
 | **Text-to-Speech** | Azure AI Speech, ElevenLabs, fish.audio, Google TTS, Kling Official, OpenAI | Piper | Piper, Google free tier, ElevenLabs free tier, Azure free tier, fish.audio s2.1-pro-free |
 | **Music Generation** | ElevenLabs, Suno, Google Lyria | — | ElevenLabs free tier |
 | **Post-Production** | — | FFmpeg (compose, stitch, trim, mix, enhance, grade) | All free |

@@ -418,7 +418,7 @@ OpenMontage/
 > **包含定价与免费额度的完整设置指南：** [`docs/PROVIDERS.md`](docs/PROVIDERS.md)
 
 <details>
-<summary><strong>视频生成 — 15 家提供商</strong></summary>
+<summary><strong>视频生成 — 16 家提供商</strong></summary>
 
 | 提供商 | 类型 | 备注 |
 |----------|------|-------|
@@ -430,6 +430,7 @@ OpenMontage/
 | **Higgsfield** | 云端 API | 带 Soul ID 以实现角色一致性的多模型编排器 |
 | **MiniMax** | 云端 API | 极具成本效益 |
 | **HeyGen** | 云端 API | 多模型网关 |
+| **Musein CLI** | 原生 CLI 网关 | 多模型视频生成，提供实时点数报价和可恢复任务 |
 | **WAN 2.1** | 本地 GPU | 免费，提供 1.3B 和 14B 版本 |
 | **Hunyuan (混元)** | 本地 GPU | 免费，高质量 |
 | **CogVideo** | 本地 GPU | 免费，提供 2B 和 5B 版本 |

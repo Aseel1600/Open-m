@@ -417,9 +417,18 @@ def score_provider(tool, task_context: dict[str, Any]) -> ProviderScore:
         estimated_cost = tool.estimate_cost(task_context)
     except Exception:
         estimated_cost = 0.0
-    cost_efficiency = _compute_cost_efficiency(
-        estimated_cost, task_context.get("budget_remaining_usd")
-    )
+    supports = info.get("supports", {})
+    cost_currency = supports.get("cost_currency", "usd")
+    usd_cost_known = supports.get("usd_cost_known", True)
+    if cost_currency != "usd" and usd_cost_known is False and estimated_cost <= 0:
+        # A provider-credit quote with no explicit USD conversion is unknown,
+        # not free. Keep it neutral until the provider returns a live quote or
+        # the operator configures a conversion rate.
+        cost_efficiency = 0.5
+    else:
+        cost_efficiency = _compute_cost_efficiency(
+            estimated_cost, task_context.get("budget_remaining_usd")
+        )
 
     # Latency: uses measured p50 latency if available, else runtime class heuristic.
     measured_p50 = info.get("latency_p50_seconds")  # historical median

@@ -51,7 +51,7 @@ OpenMontage/
 │   ├── graphics/           # Image gen (FLUX, GPT Image, Recraft, local diffusion), stock, diagrams, code snippets, math animation
 │   ├── publishers/         # (Reserved)
 │   ├── subtitle/           # SRT/VTT generation from timestamps
-│   └── video/              # 13 video gen providers, composition, stitching, trimming
+│   └── video/              # Video gen providers and CLI gateways, composition, stitching, trimming
 │
 ├── pipeline_defs/          # YAML pipeline manifests
 ├── schemas/                # JSON Schema definitions for validation
@@ -91,7 +91,7 @@ Python provides **tools and persistence only**. All intelligence lives in skill 
 
 ### 2. No LLM API Key in Runtime
 
-OpenMontage does not call LLM APIs at runtime. The coding assistant running in the user's IDE _is_ the LLM. Tools that need generation (images, video, TTS) call domain-specific APIs directly (ElevenLabs, fal.ai, HeyGen, etc.), not general-purpose LLM endpoints.
+OpenMontage does not call LLM APIs at runtime. The coding assistant running in the user's IDE _is_ the LLM. Tools that need generation (images, video, TTS) call domain-specific services directly or through provider-owned CLI gateways (ElevenLabs, fal.ai, HeyGen, Musein CLI, etc.), not general-purpose LLM endpoints.
 
 ### 3. Dual-Provider Support
 
@@ -163,7 +163,7 @@ Selectors route based on: user preference when explicitly set, then scored ranki
 
 **Subtitle (1):** subtitle_gen
 
-**Video (18):** grok_video, heygen_video, higgsfield_video, veo_video, kling_video, runway_video, minimax_video, wan_video, hunyuan_video, cogvideo_video, ltx_video_local, ltx_video_modal, pexels_video, pixabay_video, video_selector, video_compose (FFmpeg), video_stitch, video_trimmer
+**Video (selected provider and composition tools):** grok_video, heygen_video, musein_video, higgsfield_video, veo_video, kling_video, runway_video, minimax_video, wan_video, hunyuan_video, cogvideo_video, ltx_video_local, ltx_video_modal, pexels_video, pixabay_video, video_selector, video_compose (FFmpeg), video_stitch, video_trimmer
 
 ---
 
@@ -337,6 +337,7 @@ Layer 1: tools/ + pipeline_defs/  Executable capabilities + orchestration defini
 
 Each tool's `agent_skills[]` field links Layer 1 to Layers 2 and 3. For example:
 - `video_compose.agent_skills = ["remotion-best-practices", "remotion", "ffmpeg"]`
+- `musein_video.agent_skills = ["musein-cli", "ai-video-gen"]`
 - `tts_selector.agent_skills = ["text-to-speech", "elevenlabs", "openai-docs"]`
 
 ---
@@ -391,6 +392,7 @@ All config is validated via Pydantic models in `lib/config_model.py`.
 | `KLING_API_KEY` | kling_official_video, kling_official_image, kling_tts, kling_avatar, kling_lip_sync | Official Kling direct API for video, image, TTS, avatar, and lip sync |
 | `KLING_API_BASE_URL` | kling_official_video, kling_official_image, kling_tts, kling_avatar, kling_lip_sync | Optional official Kling API endpoint override |
 | `HEYGEN_API_KEY` | heygen_video | Multi-provider video generation |
+| `MUSEIN_CLI_PATH`, `MUSEIN_ENDPOINT`, `MUSEIN_USD_PER_POINT` | musein_video | Optional CLI path, endpoint, and explicit point-to-USD conversion; authentication stays in the Musein CLI credential store |
 | `PEXELS_API_KEY` | pexels_image, pexels_video | Stock media |
 | `PIXABAY_API_KEY` | pixabay_image, pixabay_video | Stock media |
 | `GOOGLE_API_KEY` | google_imagen, google_tts | Google Imagen images, Google Cloud TTS |

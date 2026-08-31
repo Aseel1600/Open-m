@@ -498,6 +498,7 @@ Each tool declares which Layer 3 skills it relies on. The agent reads Layer 1 to
 | **Kling (fal.ai)** | Cloud API | High quality, fast via fal.ai gateway |
 | **Kling Official** | Cloud API | Official direct API with separate `kling_official` provider |
 | **Atlas Cloud** | Cloud API | Unified gateway for Seedance, MiniMax, Hunyuan, and other multimodal models |
+| **Musein CLI** | Native CLI gateway | Multi-model video generation with live point quotes and recoverable tasks |
 | **Seedance 2.0 (Volcengine Ark)** | Cloud API | Official direct API with separate `seedance_ark` provider |
 | **Seedance 2.5 / 2.0** | Cloud API | Text, image, and reference-driven video workflows through supported gateways |
 | **Gemini Omni Flash** | Cloud API | Conversational multimodal video generation and editing |
