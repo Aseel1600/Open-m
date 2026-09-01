@@ -145,7 +145,14 @@
             "properties": {
               "asset_id": { "type": "string" },
               "start_seconds": { "type": "number", "minimum": 0 },
-              "volume": { "type": "number", "minimum": 0, "maximum": 1, "default": 1.0 }
+              "volume": { "type": "number", "minimum": 0, "maximum": 1, "default": 1.0 },
+              "playback_rate": {
+                "type": "number",
+                "exclusiveMinimum": 0,
+                "maximum": 4,
+                "default": 1.0,
+                "description": "Playback speed multiplier for this cue; 1.0 preserves the source speed."
+              }
             },
             "additionalProperties": false
           }

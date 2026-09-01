@@ -50,11 +50,11 @@ def ensure_demo_environment() -> str:
     if not find_command("node", "node.exe"):
         raise SystemExit("Error: Node.js is required. Install it from https://nodejs.org/")
 
-    npm_cmd = find_command("npm.cmd", "npm", "npm.exe")
+    npm_cmd = find_command("npm", "npm.cmd", "npm.exe")
     if not npm_cmd:
         raise SystemExit("Error: npm is required but was not found on PATH.")
 
-    npx_cmd = find_command("npx.cmd", "npx", "npx.exe")
+    npx_cmd = find_command("npx", "npx.cmd", "npx.exe")
     if not npx_cmd:
         raise SystemExit("Error: npx is required but was not found on PATH.")
 

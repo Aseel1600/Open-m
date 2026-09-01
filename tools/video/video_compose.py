@@ -77,6 +77,21 @@ class VideoCompose(BaseTool):
         "remotion_render",
     ]
 
+    @staticmethod
+    def _build_render_evidence(output_path: Path) -> dict[str, Any]:
+        """Bind downstream publish evidence to the bytes this tool rendered."""
+        output_path = output_path.resolve()
+        digest = hashlib.sha256()
+        with output_path.open("rb") as source:
+            for chunk in iter(lambda: source.read(1024 * 1024), b""):
+                digest.update(chunk)
+        return {
+            "path": str(output_path),
+            "sha256": digest.hexdigest(),
+            "file_size_bytes": output_path.stat().st_size,
+            "metadata": {"producer_tool": "video_compose", "operation": "render"},
+        }
+
     input_schema = {
         "type": "object",
         "required": ["operation"],
@@ -1096,6 +1111,7 @@ class VideoCompose(BaseTool):
             "output": str(output_path),
             "final_review": final_review,
             "final_review_status": final_review.get("status"),
+            "render_evidence": self._build_render_evidence(output_path),
         }
 
         if final_review.get("status") == "fail":
@@ -1735,6 +1751,7 @@ class VideoCompose(BaseTool):
                 render_result.data = {}
             render_result.data["final_review"] = final_review
             render_result.data["final_review_status"] = final_review["status"]
+            render_result.data["render_evidence"] = self._build_render_evidence(output_path)
 
             # If the self-review says fail, downgrade the ToolResult
             if final_review["status"] == "fail":
