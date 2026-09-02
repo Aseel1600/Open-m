@@ -37,7 +37,9 @@ import { resolveTheme, type ThemeConfig, DEFAULT_THEME } from "./Root";
 // Load Space Grotesk font for cinematic typography
 const { fontFamily } = loadFont("normal", {
   weights: ["400", "700"],
-  subsets: ["latin"],
+  // "latin" alone has no Vietnamese diacritics and no Latin Extended, so any
+  // composition in those languages renders with missing glyphs.
+  subsets: ["latin", "latin-ext", "vietnamese"],
 });
 
 // ---------------------------------------------------------------------------
@@ -617,6 +619,10 @@ const SceneRenderer: React.FC<{ cut: Cut; theme: ThemeConfig }> = ({ cut, theme 
         leftValue={cut.leftValue} rightValue={cut.rightValue}
         title={cut.title} backgroundColor={bgColor} textColor={textColor}
         cardBackgroundColor={cut.cardBackgroundColor || theme.surfaceColor}
+        // Without these the card keeps its own blue/green defaults and ignores
+        // the theme, whatever palette the composition asked for.
+        leftColor={accent}
+        rightColor={theme.primaryColor}
       />
     );
   }
