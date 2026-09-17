@@ -1,0 +1,3 @@
+# Regenerable soundtrack output (produced by audio/make_music.py).
+# 5 MB and byte-for-byte reproducible from the script — never commit it.
+music.wav
